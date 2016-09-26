@@ -24,3 +24,4 @@ It is a backup of KxMovie that used in Eleven RTSP streaming player
 ### Usages:
 1. Follow instructions in https://github.com/kolyvan/kxmovie
 2. Modify latency in KxMovieDecoder.m
+3. kxmovie-Prefix.pch needs to be added in "Prefixed  Header", or the error "UIImage not found" or etc. will pop out.
