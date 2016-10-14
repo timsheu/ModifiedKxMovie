@@ -16,6 +16,7 @@
 #import "KxAudioManager.h"
 #import "KxMovieGLView.h"
 #import "KxLogger.h"
+#import "SkyEye-Swift.h"
 
 NSString * const KxMovieParameterMinBufferedDuration = @"KxMovieParameterMinBufferedDuration";
 NSString * const KxMovieParameterMaxBufferedDuration = @"KxMovieParameterMaxBufferedDuration";
@@ -137,6 +138,7 @@ static NSMutableDictionary * gHistory;
     
     NSDictionary        *_parameters;
     MovieOrientation    movieOrientation;
+    AnsweringUI         *_answeringUI;
 }
 
 @property (readwrite) BOOL playing;
@@ -250,22 +252,22 @@ _messageLabel.hidden = YES;
 #endif
 
     CGFloat topH = 50;
-    CGFloat botH = 50;
+    CGFloat botH = 75;
 
     _topHUD    = [[UIView alloc] initWithFrame:CGRectMake(0,0,0,0)];
     _topBar    = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, width, topH)];
-    _bottomBar = [[UIToolbar alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
-    _bottomBar.tintColor = [UIColor blackColor];
-
+    _answeringUI = [[AnsweringUI alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
+    _answeringUI.tintColor = [UIColor blackColor];
+    
     _topHUD.frame = CGRectMake(0,0,width,_topBar.frame.size.height);
 
     _topHUD.autoresizingMask = UIViewAutoresizingFlexibleWidth;
     _topBar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
-    _bottomBar.autoresizingMask = UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleWidth;
+    _answeringUI.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
 
     [self.view addSubview:_topBar];
     [self.view addSubview:_topHUD];
-    [self.view addSubview:_bottomBar];
+    [self.view addSubview:_answeringUI];
 
     // top hud
 
@@ -307,9 +309,9 @@ _messageLabel.hidden = YES;
     _leftLabel.font = [UIFont systemFontOfSize:12];
     _leftLabel.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
     
-//    _infoButton = [UIButton buttonWithType:UIButtonTypeInfoDark];
-    _infoButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_infoButton setTitle:NSLocalizedString(@"rorate", nil) forState:UIControlStateNormal];
+    _infoButton = [UIButton buttonWithType:UIButtonTypeInfoDark];
+//    _infoButton = [UIButton buttonWithType:UIButtonTypeCustom];
+//    [_infoButton setTitle:NSLocalizedString(@"rorate", nil) forState:UIControlStateNormal];
     _infoButton.titleLabel.font=[UIFont systemFontOfSize:16];
     [_infoButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
     _infoButton.frame = CGRectMake(width-46, (topH-30)/2+1, 45, 30);
@@ -1500,7 +1502,7 @@ _messageLabel.hidden = YES;
     if (!_tableView)
         [self createTableView];
 
-    [self pause];
+//    [self pause];
     
     CGSize size = self.view.bounds.size;
     CGFloat Y = _topHUD.bounds.size.height;
@@ -1584,6 +1586,13 @@ _messageLabel.hidden = YES;
     //if (!_decoder)
     //    return NO;
     return _interrupted;
+}
+
+- (void) createAnsweringUI
+{
+    if (_answeringUI == nil) {
+//        _answeringUI = [AnsweringUI alloc] initWithFrame:<#(CGRect)#>
+    }
 }
 
 #pragma mark - Table view data source
