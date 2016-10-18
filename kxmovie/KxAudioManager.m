@@ -150,8 +150,8 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 {
     // --- Audio Session Setup ---
         
-    UInt32 sessionCategory = kAudioSessionCategory_MediaPlayback;
-    //UInt32 sessionCategory = kAudioSessionCategory_PlayAndRecord;
+//    UInt32 sessionCategory = kAudioSessionCategory_MediaPlayback;
+    UInt32 sessionCategory = kAudioSessionCategory_PlayAndRecord;
     if (checkError(AudioSessionSetProperty(kAudioSessionProperty_AudioCategory,
                                            sizeof(sessionCategory),
                                            &sessionCategory),

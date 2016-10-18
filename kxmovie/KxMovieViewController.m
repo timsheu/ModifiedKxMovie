@@ -276,7 +276,7 @@ _messageLabel.hidden = YES;
     _doneButton.backgroundColor = [UIColor clearColor];
 //    _doneButton.backgroundColor = [UIColor redColor];
     [_doneButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    [_doneButton setTitle:NSLocalizedString(@"OK", nil) forState:UIControlStateNormal];
+    [_doneButton setTitle:NSLocalizedString(@"End", nil) forState:UIControlStateNormal];
     _doneButton.titleLabel.font = [UIFont systemFontOfSize:18];
     _doneButton.showsTouchWhenHighlighted = YES;
     [_doneButton addTarget:self action:@selector(doneDidTouch:)
