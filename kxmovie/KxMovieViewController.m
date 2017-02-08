@@ -114,6 +114,7 @@ static NSMutableDictionary * gHistory;
     UILabel             *_progressLabel;
     UILabel             *_leftLabel;
     UIButton            *_infoButton;
+    UIButton            *_snapshotButton;
     UITableView         *_tableView;
     UIActivityIndicatorView *_activityIndicatorView;
     UILabel             *_subtitlesLabel;
@@ -158,10 +159,14 @@ static NSMutableDictionary * gHistory;
 
 + (id) movieViewControllerWithContentPath: (NSString *) path
                                parameters: (NSDictionary *) parameters
+                                 deviceID: (NSNumber *) deviceID
 {    
     id<KxAudioManager> audioManager = [KxAudioManager audioManager];
-    [audioManager activateAudioSession];    
-    return [[KxMovieViewController alloc] initWithContentPath: path parameters: parameters];
+    [audioManager activateAudioSession];
+    KxMovieViewController *kxvc = [[KxMovieViewController alloc] initWithContentPath: path parameters: parameters];
+    kxvc.deviceID = deviceID;
+    NSLog(@"Device ID: %@", kxvc.deviceID);
+    return kxvc;
 }
 
 - (id) initWithContentPath: (NSString *) path
@@ -258,6 +263,7 @@ _messageLabel.hidden = YES;
     _topBar    = [[UIToolbar alloc] initWithFrame:CGRectMake(0, 0, width, topH)];
     _answeringUI = [[AnsweringUI alloc] initWithFrame:CGRectMake(0, height-botH, width, botH)];
     _answeringUI.tintColor = [UIColor blackColor];
+    [_answeringUI setDeviceIDWithDeviceID:self.deviceID];
     
     _topHUD.frame = CGRectMake(0,0,width,_topBar.frame.size.height);
 
@@ -318,6 +324,15 @@ _messageLabel.hidden = YES;
     _infoButton.showsTouchWhenHighlighted = YES;
     _infoButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
     [_infoButton addTarget:self action:@selector(infoDidTouch:) forControlEvents:UIControlEventTouchUpInside];
+    
+    _snapshotButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_snapshotButton setImage:[UIImage imageNamed:@"snapshot"] forState:UIControlStateNormal];
+    [_snapshotButton setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    _snapshotButton.frame = CGRectMake(width-46-46, (topH-30)/2+1, 45, 30);
+    _snapshotButton.showsTouchWhenHighlighted = YES;
+    _snapshotButton.autoresizingMask = UIViewAutoresizingFlexibleLeftMargin;
+    [_snapshotButton addTarget:self action:@selector(snapshot:) forControlEvents:UIControlEventTouchUpInside];
+    
     
     [_topHUD addSubview:_doneButton];
     [_topHUD addSubview:_progressLabel];
@@ -598,6 +613,24 @@ _messageLabel.hidden = YES;
         [self dismissViewControllerAnimated:YES completion:nil];
     else
         [self.navigationController popViewControllerAnimated:YES];
+}
+
+- (void) snapshot: (id) sender{
+    SRKResultSet *result = [DeviceData.query whereWithFormat:@"id = %@", _deviceID].fetch;
+    DeviceData *device = result[0];
+    NSString *publicIP = device.publicIP;
+    NSString *type = device.deviceType;
+    NSInteger httpPort = device.httpPort;
+    NSString *temp = [NuDoorbellCommand snapshot];
+    if ([type isEqualToString:@"SkyEye"]) {
+        temp = [NuPlayerCommand snapshot];
+    }
+    NSString *command = @"GET ";
+    command = [command stringByAppendingString:temp];
+    command = [command stringByAppendingString:@" HTTP/1.1\r\n\r\n"];
+    HTTPSocketManager *httpSocketManager = [HTTPSocketManager sharedInstance];
+    [httpSocketManager connectWithHost:publicIP port:httpPort];
+    [httpSocketManager writeWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
 }
 
 /**
