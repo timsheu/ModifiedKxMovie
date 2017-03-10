@@ -630,7 +630,7 @@ _messageLabel.hidden = YES;
     command = [command stringByAppendingString:@" HTTP/1.1\r\n\r\n"];
     HTTPSocketManager *httpSocketManager = [HTTPSocketManager sharedInstance];
     [httpSocketManager connectWithHost:publicIP port:httpPort];
-    [httpSocketManager writeWithData:[command dataUsingEncoding:NSUTF8StringEncoding]];
+    [httpSocketManager writeWithData:[command dataUsingEncoding:NSUTF8StringEncoding] tag:0];
 }
 
 /**
