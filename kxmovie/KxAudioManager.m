@@ -201,7 +201,9 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 
     AudioComponentDescription description = {0};
     description.componentType = kAudioUnitType_Output;
-    description.componentSubType = kAudioUnitSubType_RemoteIO;
+//    description.componentSubType = kAudioUnitSubType_RemoteIO;
+    //Open AEC
+    description.componentSubType = kAudioUnitSubType_VoiceProcessingIO;
     description.componentManufacturer = kAudioUnitManufacturer_Apple;
     
     // Get component
