@@ -162,9 +162,14 @@ static NSMutableDictionary * gHistory;
                                  deviceID: (NSNumber *) deviceID
 {    
     id<KxAudioManager> audioManager = [KxAudioManager audioManager];
+    SRKResultSet *result = [[[DeviceData query] whereWithFormat:[NSString stringWithFormat:@"id == %@", deviceID]]fetch];
+    DeviceData *device = result[0];
+    [audioManager setAEC:device.isAEC];
     [audioManager activateAudioSession];
+    
     KxMovieViewController *kxvc = [[KxMovieViewController alloc] initWithContentPath: path parameters: parameters];
     kxvc.deviceID = deviceID;
+    
     NSLog(@"Device ID: %@", kxvc.deviceID);
     return kxvc;
 }
@@ -629,7 +634,7 @@ _messageLabel.hidden = YES;
     command = [command stringByAppendingString:temp];
     command = [command stringByAppendingString:@" HTTP/1.1\r\n\r\n"];
     HTTPSocketManager *httpSocketManager = [HTTPSocketManager sharedInstance];
-    [httpSocketManager connectWithHost:publicIP port:httpPort];
+    [httpSocketManager connectWithHost:publicIP port:httpPort socketTag: HTTPSocketTagsDEFAULT];
     [httpSocketManager writeWithData:[command dataUsingEncoding:NSUTF8StringEncoding] tag:0];
 }
 

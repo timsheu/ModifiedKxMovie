@@ -31,7 +31,7 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 
 
 @interface KxAudioManagerImpl : KxAudioManager<KxAudioManager> {
-    
+    BOOL                        isAEC;
     BOOL                        _initialized;
     BOOL                        _activated;
     float                       *_outData;
@@ -45,7 +45,6 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 @property (readwrite) Float32           outputVolume;
 @property (readonly) BOOL               playing;
 @property (readonly, strong) NSString   *audioRoute;
-
 @property (readwrite, copy) KxAudioManagerOutputBlock outputBlock;
 @property (readwrite) BOOL playAfterSessionEndInterruption;
 
@@ -53,7 +52,7 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 - (void) deactivateAudioSession;
 - (BOOL) play;
 - (void) pause;
-
+- (void) setAEC: (BOOL) onoff;
 - (BOOL) checkAudioRoute;
 - (BOOL) setupAudio;
 - (BOOL) checkSessionProperties;
@@ -82,7 +81,7 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 {    
     self = [super init];
 	if (self) {
-        
+        isAEC = NO;
         _outData = (float *)calloc(MAX_FRAME_SIZE*MAX_CHAN, sizeof(float));
         _outputVolume = 0.5;        
 	}	
@@ -201,9 +200,13 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 
     AudioComponentDescription description = {0};
     description.componentType = kAudioUnitType_Output;
-//    description.componentSubType = kAudioUnitSubType_RemoteIO;
+    if (isAEC == YES) {
+        description.componentSubType = kAudioUnitSubType_VoiceProcessingIO;
+    } else {
+        description.componentSubType = kAudioUnitSubType_RemoteIO;
+    }
     //Open AEC
-    description.componentSubType = kAudioUnitSubType_VoiceProcessingIO;
+    
     description.componentManufacturer = kAudioUnitManufacturer_Apple;
     
     // Get component
@@ -452,6 +455,10 @@ static OSStatus renderCallback (void *inRefCon, AudioUnitRenderActionFlags	*ioAc
 	}
     
     return _playing;
+}
+
+- (void)setAEC:(BOOL)onoff{
+    isAEC = onoff;
 }
 
 @end

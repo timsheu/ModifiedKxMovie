@@ -29,6 +29,7 @@ typedef void (^KxAudioManagerOutputBlock)(float *data, UInt32 numFrames, UInt32 
 - (void) deactivateAudioSession;
 - (BOOL) play;
 - (void) pause;
+- (void) setAEC:(BOOL)onoff;
 
 @end
 
