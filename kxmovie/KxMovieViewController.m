@@ -75,7 +75,7 @@ static NSMutableDictionary * gHistory;
 #define NETWORK_MIN_BUFFERED_DURATION 2.0
 #define NETWORK_MAX_BUFFERED_DURATION 4.0
 
-@interface KxMovieViewController () {
+@interface KxMovieViewController () <HTTPSocketDelegate>{
 
     KxMovieDecoder      *_decoder;    
     dispatch_queue_t    _dispatchQueue;
@@ -140,6 +140,8 @@ static NSMutableDictionary * gHistory;
     NSDictionary        *_parameters;
     MovieOrientation    movieOrientation;
     AnsweringUI         *_answeringUI;
+    UILongPressGestureRecognizer *_pressGesture;
+    CGSize              _frameSize;
 }
 
 @property (readwrite) BOOL playing;
@@ -489,11 +491,6 @@ _messageLabel.hidden = YES;
     LoggerStream(1, @"viewWillDisappear %@", self);
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown);
-}
-
 - (void) applicationWillResignActive: (NSNotification *)notification
 {
     [self showHUD:YES];
@@ -669,7 +666,7 @@ _messageLabel.hidden = YES;
    
 }
 - (BOOL)shouldAutorotate{
-    return YES;
+    return NO;
 }
 
 - (void) playDidTouch: (id) sender
@@ -789,6 +786,80 @@ _messageLabel.hidden = YES;
         [self play];
 }
 
+- (UIInterfaceOrientationMask)supportedInterfaceOrientations{
+    return UIInterfaceOrientationMaskLandscape;
+}
+
+- (void) longPressOnScreen:(UILongPressGestureRecognizer *)press{
+    if (press.state == UIGestureRecognizerStateBegan) {
+        CGPoint location = [press locationInView:_imageView];
+        float xRatio = location.x / _frameSize.width,
+        yRatio = location.y / _frameSize.height;
+        (xRatio < 0.25) ? (xRatio = 0.25) : (xRatio = xRatio);
+        (xRatio > 0.75) ? (xRatio = 0.75) : (xRatio = xRatio);
+        (yRatio < 0.25) ? (yRatio = 0.25) : (yRatio = yRatio);
+        (yRatio > 0.75) ? (yRatio = 0.75) : (yRatio = yRatio);
+        NSLog(@"xRatio = %f, yRatio = %f", xRatio, yRatio);
+        int width = 1920, height = 1080;
+        SRKResultSet *result = [[[DeviceData query] whereWithFormat:[NSString stringWithFormat:@"id == %@", _deviceID]]fetch];
+        DeviceData *device = result[0];
+        NSString *resolution = device.resolution;
+        if ([resolution isEqualToString:@"720p"]) {
+            width = 1280;
+            height = 720;
+        }else if ([resolution isEqualToString:@"VGA"]){
+            width = 640;
+            height = 480;
+        }else if ([resolution isEqualToString:@"QVGA"]){
+            width = 320;
+            height = 240;
+        }
+        int startX = (int) ((xRatio - 0.25) * width),
+        endX = (int) ((xRatio + 0.25) * width),
+        startY = (int) ((yRatio - 0.25) * height),
+        endY = (int) ((yRatio + 0.25) * height);
+        NSString *temp = [NuDoorbellCommand setAEWindowWithStartX:startX endX:endX startY:startY endY:endY];
+        
+        NSString *publicIP = device.publicIP;
+        NSString *type = device.deviceType;
+        
+        if ([type isEqualToString:@"NuDoorbell"]) {
+            NSString *command = @"GET ";
+            command = [command stringByAppendingString:temp];
+            command = [command stringByAppendingString:@" HTTP/1.1\r\n\r\n"];
+            HTTPSocketManager *httpSocketManager = [HTTPSocketManager sharedInstance];
+            httpSocketManager.command = command;
+            httpSocketManager.delegate = self;
+            [httpSocketManager connectWithHost:publicIP port:device.httpPort socketTag: HTTPSocketTagsUPDATE_AE_WINDOW];
+        }
+    }
+}
+
+#pragma HTTPSocketManager delegate
+
+- (void)didConnectedWithSocketTag:(NSInteger)socketTag{
+    [HTTPSocketManager.sharedInstance openReadEternalWithTag:socketTag];
+    if (HTTPSocketManager.sharedInstance.command != nil) {
+        [HTTPSocketManager.sharedInstance writeWithData:[HTTPSocketManager.sharedInstance.command dataUsingEncoding:NSUTF8StringEncoding] tag:socketTag];
+        [self.view makeToast:@"Command sent, delay 5 seconds"];
+        _pressGesture.enabled = NO;
+        [NSTimer scheduledTimerWithTimeInterval:5.0 repeats:NO block:^(NSTimer *timer){
+            _pressGesture.enabled = YES;
+        }];
+    }
+}
+
+- (void)didDisconnected{
+    
+}
+
+- (void)dataReadWithData:(NSData *)data socketTag:(NSInteger)socketTag{
+    NSDictionary *result = [PluginParser parseHTTPResponseWithData:data];
+    if ([result objectForKey:@"value"] == 0) {
+        [self.view makeToast:@"Send success"];
+    }
+}
+
 - (void) setupPresentView
 {
     CGRect bounds = self.view.bounds;
@@ -810,7 +881,7 @@ _messageLabel.hidden = YES;
     frameView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleRightMargin | UIViewAutoresizingFlexibleLeftMargin | UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleBottomMargin;
     
     [self.view insertSubview:frameView atIndex:0];
-        
+    _frameSize = frameView.bounds.size;
     if (_decoder.validVideo) {
     
         [self setupUserInteraction];
@@ -863,6 +934,8 @@ _messageLabel.hidden = YES;
 
         [self.view addSubview:_subtitlesLabel];
     }
+    _pressGesture = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressOnScreen:)];
+    [frameView addGestureRecognizer:_pressGesture];
 }
 
 - (void) setupUserInteraction
